@@ -1,4 +1,6 @@
+name: Amard.ESS
 services:
+
   ess.api:
     container_name: Amard.ESS.API
     image: ${DOCKER_REGISTRY-}essapi
