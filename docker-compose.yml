@@ -1,8 +1,9 @@
-name: Amard.ESS
+name: ess_stack
 services:
 
+  #API
   ess.api:
-    container_name: Amard.ESS.API
+    container_name: API
     image: ${DOCKER_REGISTRY-}essapi
     build:
       context: .
@@ -17,8 +18,39 @@ services:
       # Aspire Dashboard
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://ess.aspire-dashboard:18889
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    depends_on:
+      - ess.postgres
 
+  #PostgreSQL
+  ess.postgres:
+    container_name: PostgresDatabase
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: amard_ess
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./.containers/postgres_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  #PGAdmin
+  ess.pgadmin:
+    container_name: PgAdmin
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: arezaqassemi@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - 5050:80
+    depends_on:
+      - ess.postgres
+    volumes:
+      - ./.containers/pgadmin_data:/var/lib/pgadmin
+
+  #Seq
   ess.seq:
+    container_name: SeqLogging
     image: datalust/seq:latest # or latest
     environment:
       ACCEPT_EULA: "Y"
@@ -28,7 +60,9 @@ services:
       - 8080:80
       - 5341:5341
 
+  #AspireDashboard
   ess.aspire-dashboard:
+    container_name: AspireDashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true

@@ -1,4 +1,3 @@
-name: Amard.ESS
 services:
   ess.api:
     environment:

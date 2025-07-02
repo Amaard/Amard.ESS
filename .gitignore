@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /.containers/seq_data
 *.dockerignore
+/.containers/postgres_data
+/.containers/pgadmin_data
+/src/ESS.Api/Database/Migrations/Application
