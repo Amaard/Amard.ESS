@@ -1,6 +1,12 @@
-﻿namespace ESS.Api.Database.Entities.Settings;
+﻿using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
+namespace ESS.Api.Database.Entities.Settings;
+
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum GeneralSettingsKey
 {
-    PaySlip_ImageFolder
+    [EnumMember(Value = "paySlipImageFolder")]
+    PaySlipImageFolder
 }

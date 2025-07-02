@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ESS.Api.Database;
 using ESS.Api.Database.Extentions;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ builder.Services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddRuntimeInstrumentation())
     .UseOtlpExporter();
+
 
 builder.Logging.AddOpenTelemetry(options =>
 {

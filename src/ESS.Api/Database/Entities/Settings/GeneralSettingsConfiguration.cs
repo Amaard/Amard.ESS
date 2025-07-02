@@ -15,6 +15,7 @@ public sealed class GeneralSettingsConfiguration: IEntityTypeConfiguration<Gener
 
         builder.Property(h => h.Key)
                .IsRequired()
+               .HasConversion<string>()
                .HasMaxLength(100);
 
         builder.Property(h => h.Value)

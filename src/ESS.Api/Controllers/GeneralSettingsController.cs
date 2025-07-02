@@ -1,8 +1,8 @@
 ﻿using ESS.Api.Database;
 using ESS.Api.Database.Entities.Settings;
 using Microsoft.AspNetCore.Mvc;
-using ESS.Api.DTOs;
 using Microsoft.EntityFrameworkCore;
+using ESS.Api.DTOs.Settings;
 
 namespace ESS.Api.Controllers;
 
@@ -15,15 +15,7 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
     {
         List<GeneralSettingsDto> generalSettingsList = await dbContext
             .GeneralSettings
-            .Select(h => new GeneralSettingsDto
-            {
-                Id = h.Id,
-                Key = h.Key,
-                Value = h.Value,
-                CreatedAt = h.CreatedAt,
-                ModifiedAt = h.ModifiedAt
-
-            }).ToListAsync();
+            .Select(GeneralSettingsQueries.ProjectToDto()).ToListAsync();
 
         var generalSettingsCollectionDto =
          new GeneralSettingsCollectionDto
@@ -40,15 +32,7 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
         GeneralSettingsDto? generalSetting = await dbContext
             .GeneralSettings
             .Where(h => h.Id == id)
-            .Select(h => new GeneralSettingsDto
-            {
-                Id = h.Id,
-                Key = h.Key,
-                Value = h.Value,
-                CreatedAt = h.CreatedAt,
-                ModifiedAt = h.ModifiedAt
-
-            }).FirstOrDefaultAsync();
+            .Select(GeneralSettingsQueries.ProjectToDto()).FirstOrDefaultAsync();
 
         if (generalSetting is null)
         {
@@ -56,5 +40,37 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
         }
 
         return Ok(generalSetting);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<GeneralSettingsDto>> CreateGeneralSettings(CreateGeneralSettingsDto createGeneralSettingsDto)
+    {
+        GeneralSettings generalSetting = createGeneralSettingsDto.ToEntity();
+
+        dbContext.GeneralSettings.Add(generalSetting);
+
+        await dbContext.SaveChangesAsync();
+
+        GeneralSettingsDto generalSettingsDto = generalSetting.ToDto();
+
+        return CreatedAtAction(nameof(GetGeneralSettings), new { id = generalSettingsDto.Id }, generalSettingsDto);
+
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateGeneralSettings(string id, UpdateGeneralSettingsDto updateGeneralSettingsDto)
+    {
+        GeneralSettings? generalSettings = await dbContext.GeneralSettings.FirstOrDefaultAsync(h => h.Id == id);
+
+        if (generalSettings is null)
+        {
+            return NotFound();
+        }
+
+        generalSettings.UpdateFromDto(updateGeneralSettingsDto);
+
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
     }
 }
