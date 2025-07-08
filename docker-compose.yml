@@ -9,8 +9,8 @@ services:
       context: .
       dockerfile: src/ESS.Api/Dockerfile
     ports:
-      - 5000:8080
-      - 5001:8081
+      - 5000:8080 #Http
+      - 5001:8081 #Https
     environment:
       # Seq
       # - OTEL_EXPORTER_OTLP_ENDPOINT=http://ess.seq:5341/ingest/otlp
