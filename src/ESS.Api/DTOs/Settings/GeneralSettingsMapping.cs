@@ -11,6 +11,7 @@ internal static class GeneralSettingsMapping
             Id = generalSettings.Id,
             Key = generalSettings.Key,
             Value = generalSettings.Value,
+            Description = generalSettings.Description,
             CreatedAt = generalSettings.CreatedAt,
             ModifiedAt = generalSettings.ModifiedAt
         };
@@ -21,6 +22,7 @@ internal static class GeneralSettingsMapping
         {
             Id = $"s_{Guid.CreateVersion7()}",
             Key = dto.Key,
+            Description = dto.Description,
             Value = dto.Value,
             CreatedAt = DateTime.UtcNow,
         };
@@ -31,6 +33,7 @@ internal static class GeneralSettingsMapping
     public static void UpdateFromDto(this GeneralSettings generalSettings, UpdateGeneralSettingsDto dto)
     {
         generalSettings.Value = dto.Value;
+        generalSettings.Description = dto.Description;
         generalSettings.ModifiedAt = DateTime.UtcNow;
     }
 }

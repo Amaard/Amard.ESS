@@ -5,4 +5,5 @@ namespace ESS.Api.DTOs.Settings;
 public sealed record UpdateGeneralSettingsDto
 {
     public string Value { get; init; }
+    public string? Description { get; init; }
 }

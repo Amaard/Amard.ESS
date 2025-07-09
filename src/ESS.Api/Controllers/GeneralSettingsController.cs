@@ -3,6 +3,7 @@ using ESS.Api.Database.Entities.Settings;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ESS.Api.DTOs.Settings;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace ESS.Api.Controllers;
 
@@ -47,6 +48,16 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
     {
         GeneralSettings generalSetting = createGeneralSettingsDto.ToEntity();
 
+        if (!GeneralSettingsKeyExtensions.IsValidKey(generalSetting.Key))
+        {
+            return BadRequest("Invalid Settings Key");
+        }
+
+        if (await dbContext.GeneralSettings.AnyAsync(s=> s.Key == generalSetting.Key))
+        {
+            return Conflict($"The Setting '{generalSetting.Key}' already exists");
+        }
+
         dbContext.GeneralSettings.Add(generalSetting);
 
         await dbContext.SaveChangesAsync();
@@ -73,4 +84,48 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
 
         return NoContent();
     }
+
+    [HttpPatch("{id}")]
+    public async Task<ActionResult> PatchGeneralSettings(string id, JsonPatchDocument<GeneralSettingsDto> patchDocument)
+    {
+        GeneralSettings? generalSettings = await dbContext.GeneralSettings.FirstOrDefaultAsync(h => h.Id == id);
+
+        if (generalSettings is null)
+        {
+            return NotFound();
+        }
+
+        GeneralSettingsDto generalSettingsDto = generalSettings.ToDto();
+
+        patchDocument.ApplyTo(generalSettingsDto, ModelState);
+
+        if (!TryValidateModel(generalSettingsDto))
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        generalSettings.Value = generalSettingsDto.Value;
+        generalSettings.ModifiedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteGeneralSettings(string id)
+    {
+        GeneralSettings? generalSettings = await dbContext.GeneralSettings.FirstOrDefaultAsync(g => g.Id == id);
+
+        if (generalSettings is null)
+        {
+            return NotFound();
+        }
+
+        dbContext.GeneralSettings.Remove(generalSettings);
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+
 }

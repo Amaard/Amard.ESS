@@ -7,13 +7,14 @@ internal static class GeneralSettingsQueries
 {
     public static Expression<Func<GeneralSettings, GeneralSettingsDto>> ProjectToDto()
     {
-        return h => new GeneralSettingsDto
+        return s => new GeneralSettingsDto
         {
-            Id = h.Id,
-            Key = h.Key,
-            Value = h.Value,
-            CreatedAt = h.CreatedAt,
-            ModifiedAt = h.ModifiedAt
+            Id = s.Id,
+            Key = s.Key,
+            Value = s.Value,
+            Description = s.Description,
+            CreatedAt = s.CreatedAt,
+            ModifiedAt = s.ModifiedAt
 
         };
     }

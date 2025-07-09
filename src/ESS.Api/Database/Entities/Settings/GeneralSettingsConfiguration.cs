@@ -9,24 +9,25 @@ public sealed class GeneralSettingsConfiguration: IEntityTypeConfiguration<Gener
     {
         builder.ToTable("general_settings");
 
-        builder.HasKey(h => h.Id);
-        builder.Property(h => h.Id).IsRequired();
-        builder.Property(h => h.Id).HasMaxLength(500);
+        builder.HasKey(s => s.Id);
+        builder.Property(s => s.Id).IsRequired();
+        builder.Property(s => s.Id).HasMaxLength(500);
 
-        builder.Property(h => h.Key)
+        builder.Property(s => s.Key)
                .IsRequired()
-               .HasConversion<string>()
                .HasMaxLength(100);
 
-        builder.Property(h => h.Value)
+        builder.Property(s => s.Value)
                .HasMaxLength(2000);
 
-        builder.Property(h => h.CreatedAt)
+        builder.Property(s => s.Description).HasMaxLength(500);
+
+        builder.Property(s => s.CreatedAt)
                .IsRequired();
 
-        builder.Property(h => h.ModifiedAt);
+        builder.Property(s => s.ModifiedAt);
 
-        builder.HasIndex(h => h.Key)
+        builder.HasIndex(s => s.Key)
                .IsUnique();
     }
 }
