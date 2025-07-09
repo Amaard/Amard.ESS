@@ -48,25 +48,16 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
 
     [HttpPost]
     public async Task<ActionResult<GeneralSettingsDto>> CreateGeneralSettings(CreateGeneralSettingsDto createGeneralSettingsDto,
-        IValidator<CreateGeneralSettingsDto> validator,
-        ProblemDetailsFactory problemDetailsFactory)
+        IValidator<CreateGeneralSettingsDto> validator)
     {
-        ValidationResult validationResult = await validator.ValidateAsync(createGeneralSettingsDto);
-
-        if (!validationResult.IsValid)
-        {
-            ProblemDetails problem = problemDetailsFactory.CreateProblemDetails( HttpContext, StatusCodes.Status400BadRequest);
-
-            problem.Extensions.Add("errors", validationResult.ToDictionary());
-
-            return BadRequest(problem);
-        }
+        await validator.ValidateAndThrowAsync(createGeneralSettingsDto);
 
         GeneralSettings generalSetting = createGeneralSettingsDto.ToEntity();
 
-        if (await dbContext.GeneralSettings.AnyAsync(s=> s.Key == generalSetting.Key))
+        if (await dbContext.GeneralSettings.AnyAsync(s => s.Key == generalSetting.Key))
         {
-            return Conflict($"The Setting '{generalSetting.Key}' already exists");
+            return Problem(detail: $"The Setting '{generalSetting.Key}' already exists",
+                           statusCode: StatusCodes.Status409Conflict);
         }
 
         dbContext.GeneralSettings.Add(generalSetting);
