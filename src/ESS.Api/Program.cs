@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ESS.Api.Database;
 using ESS.Api.Database.Extentions;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
@@ -17,6 +18,8 @@ builder.Services.AddControllers(options =>
 })
 .AddNewtonsoftJson()
 .AddXmlSerializerFormatters();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddOpenApi();
 

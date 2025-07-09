@@ -1,4 +1,4 @@
-﻿using ESS.Api.Database.Entities.Settings;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ESS.Api.DTOs.Settings;
 

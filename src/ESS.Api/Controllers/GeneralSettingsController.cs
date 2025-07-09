@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ESS.Api.DTOs.Settings;
 using Microsoft.AspNetCore.JsonPatch;
+using FluentValidation;
+using FluentValidation.Results;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace ESS.Api.Controllers;
 
@@ -44,14 +47,22 @@ public sealed class GeneralSettingsController(ApplicationDbContext dbContext) : 
     }
 
     [HttpPost]
-    public async Task<ActionResult<GeneralSettingsDto>> CreateGeneralSettings(CreateGeneralSettingsDto createGeneralSettingsDto)
+    public async Task<ActionResult<GeneralSettingsDto>> CreateGeneralSettings(CreateGeneralSettingsDto createGeneralSettingsDto,
+        IValidator<CreateGeneralSettingsDto> validator,
+        ProblemDetailsFactory problemDetailsFactory)
     {
-        GeneralSettings generalSetting = createGeneralSettingsDto.ToEntity();
+        ValidationResult validationResult = await validator.ValidateAsync(createGeneralSettingsDto);
 
-        if (!GeneralSettingsKeyExtensions.IsValidKey(generalSetting.Key))
+        if (!validationResult.IsValid)
         {
-            return BadRequest("Invalid Settings Key");
+            ProblemDetails problem = problemDetailsFactory.CreateProblemDetails( HttpContext, StatusCodes.Status400BadRequest);
+
+            problem.Extensions.Add("errors", validationResult.ToDictionary());
+
+            return BadRequest(problem);
         }
+
+        GeneralSettings generalSetting = createGeneralSettingsDto.ToEntity();
 
         if (await dbContext.GeneralSettings.AnyAsync(s=> s.Key == generalSetting.Key))
         {
