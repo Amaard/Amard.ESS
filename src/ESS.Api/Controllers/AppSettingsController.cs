@@ -15,10 +15,16 @@ namespace ESS.Api.Controllers;
 public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings()
+    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings([FromQuery] AppSettingsQueryParameter query)
     {
+        query.Search ??= query.Search?.Trim().ToLower();
+
         List<AppSettingsDto> AppSettingsList = await dbContext
             .AppSettings
+            .Where(s => query.Search == null ||
+                        s.Key.ToLower().Contains(query.Search) ||
+                        s.Description != null && s.Description.ToLower().Contains(query.Search))
+            .Where(s => query.Type == null || s.Type == query.Type)
             .Select(AppSettingsQueries.ProjectToDto()).ToListAsync();
 
         var AppSettingsCollectionDto =
