@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ESS.Api.Middleware;
+namespace ESS.Api.Middleware.Exceptions;
 
 public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {

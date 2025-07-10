@@ -2,8 +2,9 @@
 
 namespace ESS.Api.DTOs.Settings;
 
-public sealed record UpdateGeneralSettingsDto
+public sealed record UpdateAppSettingsDto
 {
     public string Value { get; init; }
+    public required int Type { get; init; }
     public string? Description { get; init; }
 }

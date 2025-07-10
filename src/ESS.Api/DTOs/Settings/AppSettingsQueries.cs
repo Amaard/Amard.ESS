@@ -3,19 +3,19 @@ using ESS.Api.Database.Entities.Settings;
 
 namespace ESS.Api.DTOs.Settings;
 
-internal static class GeneralSettingsQueries
+internal static class AppSettingsQueries
 {
-    public static Expression<Func<GeneralSettings, GeneralSettingsDto>> ProjectToDto()
+    public static Expression<Func<AppSettings, AppSettingsDto>> ProjectToDto()
     {
-        return s => new GeneralSettingsDto
+        return s => new AppSettingsDto
         {
             Id = s.Id,
             Key = s.Key,
             Value = s.Value,
+            Type = s.Type,
             Description = s.Description,
             CreatedAt = s.CreatedAt,
             ModifiedAt = s.ModifiedAt
-
         };
     }
 }

@@ -3,11 +3,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ESS.Api.Database.Entities.Settings;
 
-public sealed class GeneralSettingsConfiguration: IEntityTypeConfiguration<GeneralSettings>
+public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettings>
 {
-    public void Configure(EntityTypeBuilder<GeneralSettings> builder)
+    public void Configure(EntityTypeBuilder<AppSettings> builder)
     {
-        builder.ToTable("general_settings");
+        builder.ToTable("app_settings");
 
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).IsRequired();
@@ -19,6 +19,10 @@ public sealed class GeneralSettingsConfiguration: IEntityTypeConfiguration<Gener
 
         builder.Property(s => s.Value)
                .HasMaxLength(2000);
+
+        builder.Property(s=> s.Type)
+               .IsRequired()
+               .HasMaxLength(16);
 
         builder.Property(s => s.Description).HasMaxLength(500);
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using ESS.Api.Database;
 using ESS.Api.Database.Extentions;
-using ESS.Api.Middleware;
+using ESS.Api.Middleware.Exceptions;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;

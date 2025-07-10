@@ -2,17 +2,18 @@
 
 namespace ESS.Api.DTOs.Settings;
 
-public sealed record GeneralSettingsDto
+public sealed record AppSettingsDto
 {
     public required string Id { get; init; }
     public required string Key { get; init; }
     public string Value { get; init; }
+    public required int Type { get; init; }
     public string? Description { get; init; }
     public required DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime? ModifiedAt { get; init; }
 }
 
-public sealed record GeneralSettingsCollectionDto
+public sealed record AppSettingsCollectionDto
 {
-    public List<GeneralSettingsDto> Data { get; init; }
+    public List<AppSettingsDto> Data { get; init; }
 }

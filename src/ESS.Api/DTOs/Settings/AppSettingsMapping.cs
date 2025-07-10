@@ -2,26 +2,28 @@
 
 namespace ESS.Api.DTOs.Settings;
 
-internal static class GeneralSettingsMapping
+internal static class AppSettingsMapping
 {
-    public static GeneralSettingsDto ToDto (this GeneralSettings generalSettings)
+    public static AppSettingsDto ToDto (this AppSettings generalSettings)
     {
-        return new GeneralSettingsDto
+        return new AppSettingsDto
         {
             Id = generalSettings.Id,
             Key = generalSettings.Key,
             Value = generalSettings.Value,
+            Type = generalSettings.Type,
             Description = generalSettings.Description,
             CreatedAt = generalSettings.CreatedAt,
             ModifiedAt = generalSettings.ModifiedAt
         };
     }
-    public static GeneralSettings ToEntity(this CreateGeneralSettingsDto dto)
+    public static AppSettings ToEntity(this CreateAppSettingsDto dto)
     {
-        GeneralSettings generalSettings = new()
+        AppSettings generalSettings = new()
         {
             Id = $"s_{Guid.CreateVersion7()}",
             Key = dto.Key,
+            Type = dto.Type,
             Description = dto.Description,
             Value = dto.Value,
             CreatedAt = DateTime.UtcNow,
@@ -30,9 +32,10 @@ internal static class GeneralSettingsMapping
         return generalSettings;
     }
 
-    public static void UpdateFromDto(this GeneralSettings generalSettings, UpdateGeneralSettingsDto dto)
+    public static void UpdateFromDto(this AppSettings generalSettings, UpdateAppSettingsDto dto)
     {
         generalSettings.Value = dto.Value;
+        generalSettings.Type = dto.Type;
         generalSettings.Description = dto.Description;
         generalSettings.ModifiedAt = DateTime.UtcNow;
     }
