@@ -4,10 +4,12 @@ using ESS.Api.Database.Entities.Settings;
 using ESS.Api.Database.Extentions;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
+using ESS.Api.Services;
 using ESS.Api.Services.Sorting;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Newtonsoft.Json.Serialization;
 using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -20,7 +22,8 @@ builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
 })
-.AddNewtonsoftJson()
+.AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = 
+    new CamelCasePropertyNamesContractResolver())
 .AddXmlSerializerFormatters();
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -63,6 +66,8 @@ builder.Logging.AddOpenTelemetry(options =>
 
 builder.Services.AddTransient<SortMappingProvider>();
 builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<AppSettingsDto, AppSettings>> ( _ => AppSettingsMapping.SortMapping);
+
+builder.Services.AddTransient<DataShapingService>();
 
 var app = builder.Build();
 

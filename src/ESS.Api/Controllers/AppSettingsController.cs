@@ -1,14 +1,17 @@
-﻿using ESS.Api.Database;
+﻿using System.Dynamic;
+using ESS.Api.Database;
 using ESS.Api.Database.Entities.Settings;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
-using Microsoft.AspNetCore.JsonPatch;
+using ESS.Api.Services;
+using ESS.Api.Services.Sorting;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using ESS.Api.Services.Sorting;
-using ESS.Api.DTOs.Common;
+using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
 
@@ -17,16 +20,23 @@ namespace ESS.Api.Controllers;
 public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<PaginationResult<AppSettingsDto>>> GetAppSettings(
+    public async Task<IActionResult> GetAppSettings(
         [FromQuery] AppSettingsQueryParameter query,
-        SortMappingProvider sortMappingProvider
-        )
+        SortMappingProvider sortMappingProvider,
+        DataShapingService dataShapingService)
     {
         if (!sortMappingProvider.ValidateMappings<AppSettingsDto, AppSettings>(query.Sort))
         {
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 detail: $"The provided sort parameter isn't valid: '{query.Sort}'");
+        }
+
+        if (!dataShapingService.Validate<AppSettingsDto>(query.Fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided Fields aren't valid: '{query.Fields}'");
         }
 
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -45,25 +55,50 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
             .ApplySort(query.Sort, sortMappings)
             .Select(AppSettingsQueries.ProjectToDto());
 
-        var paginationResult = await PaginationResult<AppSettingsDto>.CreateAsync(appSettingsQuery, query.Page , query.PageSize);
+        int totalCount = await appSettingsQuery.CountAsync();
+
+        var appSettings = await appSettingsQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        var paginationResult = new PaginationResult<ExpandoObject>
+        {
+            Items = dataShapingService.ShapeCollectionData(appSettings, query.Fields),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount
+        };
 
         return Ok(paginationResult);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<AppSettingsDto>> GetAppSettings(string id)
+    public async Task<IActionResult> GetAppSettings(
+        string id,
+        string? fields,
+        DataShapingService dataShapingService)
     {
-        AppSettingsDto? generalSetting = await dbContext
+        if (!dataShapingService.Validate<AppSettingsDto>(fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided Fields aren't valid: '{fields}'");
+        }
+
+        AppSettingsDto? appSetting = await dbContext
             .AppSettings
             .Where(h => h.Id == id)
             .Select(AppSettingsQueries.ProjectToDto()).FirstOrDefaultAsync();
 
-        if (generalSetting is null)
+        if (appSetting is null)
         {
             return NotFound();
         }
 
-        return Ok(generalSetting);
+        ExpandoObject ShapedappSetting = dataShapingService.ShapeData(appSetting, fields);
+
+        return Ok(ShapedappSetting);
     }
 
     [HttpPost]
@@ -73,19 +108,19 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
     {
         await validator.ValidateAndThrowAsync(createAppSettingsDto);
 
-        AppSettings generalSetting = createAppSettingsDto.ToEntity();
+        AppSettings appSetting = createAppSettingsDto.ToEntity();
 
-        if (await dbContext.AppSettings.AnyAsync(s => s.Key == generalSetting.Key))
+        if (await dbContext.AppSettings.AnyAsync(s => s.Key == appSetting.Key))
         {
-            return Problem(detail: $"The Setting '{generalSetting.Key}' already exists",
+            return Problem(detail: $"The Setting '{appSetting.Key}' already exists",
                            statusCode: StatusCodes.Status409Conflict);
         }
 
-        dbContext.AppSettings.Add(generalSetting);
+        dbContext.AppSettings.Add(appSetting);
 
         await dbContext.SaveChangesAsync();
 
-        AppSettingsDto AppSettingsDto = generalSetting.ToDto();
+        AppSettingsDto AppSettingsDto = appSetting.ToDto();
 
         return CreatedAtAction(nameof(GetAppSettings), new { id = AppSettingsDto.Id }, AppSettingsDto);
 
