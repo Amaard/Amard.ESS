@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using ESS.Api.Services.Sorting;
 
 namespace ESS.Api.Controllers;
 
@@ -15,12 +16,17 @@ namespace ESS.Api.Controllers;
 public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings([FromQuery] AppSettingsQueryParameter query)
+    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings(
+        [FromQuery] AppSettingsQueryParameter query,
+        SortMappingProvider sortMappingProvider
+        )
     {
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             query.Search = query.Search.Trim().ToLower();
         }
+
+        SortMapping[] sortMappings = sortMappingProvider.GetMappings<AppSettingsDto, AppSettings>();
 
         List<AppSettingsDto> AppSettingsList = await dbContext
             .AppSettings
@@ -28,6 +34,7 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
                         s.Key.ToLower().Contains(query.Search) ||
                         s.Description != null && s.Description.ToLower().Contains(query.Search))
             .Where(s => query.Type == null || s.Type == query.Type)
+            .ApplySort(query.Sort , sortMappings)
             .Select(AppSettingsQueries.ProjectToDto()).ToListAsync();
 
         var AppSettingsCollectionDto =

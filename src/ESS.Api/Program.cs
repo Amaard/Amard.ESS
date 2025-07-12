@@ -1,7 +1,10 @@
 using System.Text.Json;
 using ESS.Api.Database;
+using ESS.Api.Database.Entities.Settings;
 using ESS.Api.Database.Extentions;
+using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
+using ESS.Api.Services.Sorting;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -57,6 +60,9 @@ builder.Logging.AddOpenTelemetry(options =>
     options.IncludeScopes = true;
     options.IncludeFormattedMessage = true;
 });
+
+builder.Services.AddTransient<SortMappingProvider>();
+builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<AppSettingsDto, AppSettings>> ( _ => AppSettingsMapping.SortMapping);
 
 var app = builder.Build();
 

@@ -8,4 +8,5 @@ public sealed record AppSettingsQueryParameter
     [FromQuery(Name ="q")]
     public string? Search {  get; set; }
     public AppSettingsType? Type { get; init; }
+    public string? Sort { get; init; }
 }
