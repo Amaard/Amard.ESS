@@ -12,8 +12,3 @@ public sealed record AppSettingsDto
     public required DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime? ModifiedAt { get; init; }
 }
-
-public sealed record AppSettingsCollectionDto
-{
-    public List<AppSettingsDto> Data { get; init; }
-}

@@ -1,12 +1,10 @@
 ﻿using ESS.Api.Database.Entities.Settings;
+using ESS.Api.DTOs.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ESS.Api.DTOs.Settings;
 
-public sealed record AppSettingsQueryParameter
+public sealed record AppSettingsQueryParameter : QueryParameter
 {
-    [FromQuery(Name ="q")]
-    public string? Search {  get; set; }
     public AppSettingsType? Type { get; init; }
-    public string? Sort { get; init; }
 }

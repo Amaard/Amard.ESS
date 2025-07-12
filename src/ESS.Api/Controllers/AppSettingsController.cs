@@ -8,6 +8,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using ESS.Api.Services.Sorting;
+using ESS.Api.DTOs.Common;
 
 namespace ESS.Api.Controllers;
 
@@ -16,11 +17,18 @@ namespace ESS.Api.Controllers;
 public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings(
+    public async Task<ActionResult<PaginationResult<AppSettingsDto>>> GetAppSettings(
         [FromQuery] AppSettingsQueryParameter query,
         SortMappingProvider sortMappingProvider
         )
     {
+        if (!sortMappingProvider.ValidateMappings<AppSettingsDto, AppSettings>(query.Sort))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided sort parameter isn't valid: '{query.Sort}'");
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             query.Search = query.Search.Trim().ToLower();
@@ -28,22 +36,18 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
 
         SortMapping[] sortMappings = sortMappingProvider.GetMappings<AppSettingsDto, AppSettings>();
 
-        List<AppSettingsDto> AppSettingsList = await dbContext
+        IQueryable<AppSettingsDto> appSettingsQuery = dbContext
             .AppSettings
             .Where(s => query.Search == null ||
                         s.Key.ToLower().Contains(query.Search) ||
                         s.Description != null && s.Description.ToLower().Contains(query.Search))
             .Where(s => query.Type == null || s.Type == query.Type)
-            .ApplySort(query.Sort , sortMappings)
-            .Select(AppSettingsQueries.ProjectToDto()).ToListAsync();
+            .ApplySort(query.Sort, sortMappings)
+            .Select(AppSettingsQueries.ProjectToDto());
 
-        var AppSettingsCollectionDto =
-         new AppSettingsCollectionDto
-         {
-             Data = AppSettingsList
-         };
+        var paginationResult = await PaginationResult<AppSettingsDto>.CreateAsync(appSettingsQuery, query.Page , query.PageSize);
 
-        return Ok(AppSettingsCollectionDto);
+        return Ok(paginationResult);
     }
 
     [HttpGet("{id}")]
