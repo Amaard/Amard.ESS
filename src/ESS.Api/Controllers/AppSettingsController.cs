@@ -17,7 +17,10 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
     [HttpGet]
     public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings([FromQuery] AppSettingsQueryParameter query)
     {
-        query.Search ??= query.Search?.Trim().ToLower();
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            query.Search = query.Search.Trim().ToLower();
+        }
 
         List<AppSettingsDto> AppSettingsList = await dbContext
             .AppSettings

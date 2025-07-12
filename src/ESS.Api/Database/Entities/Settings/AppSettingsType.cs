@@ -8,12 +8,18 @@ public enum AppSettingsType
     [Display(Name = "عمومی")]
     General = 0,
 
+    [Display(Name = "امنیتی")]
+    Security = 1,
+
+    [Display(Name = "کاربری")]
+    Users = 2,
+
     [Display(Name = "حسابداری")]
-    Acc = 1,
+    Acc = 3,
 
     [Display(Name = "کارگزینی")]
-    HumanResource = 2,
+    HumanResource = 4,
 
     [Display(Name = "حقوق و دستمزد")]
-    Payroll = 3,
+    Payroll = 5,
 }

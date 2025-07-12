@@ -4,7 +4,6 @@ namespace ESS.Api.Database.Entities.Settings;
 
 internal static class AppSettingsKeyHelpers
 {
-
     private static readonly Lazy<HashSet<string>> _validKeys = new Lazy<HashSet<string>>(() =>
         typeof(AppSettingsKey)
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)

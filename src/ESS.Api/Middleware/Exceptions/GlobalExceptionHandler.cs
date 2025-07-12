@@ -16,6 +16,8 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
             Exception = exception,
             ProblemDetails = new ProblemDetails
             {
+                //uncomment if you want more details.
+                //Type = exception.GetType().Name,
                 Title = "Internal Server Error",
                 Detail = "An error occurred while processing your request. Please try again"
             }
