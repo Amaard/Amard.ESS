@@ -10,18 +10,20 @@ using FluentValidation.Results;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Trace;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
 
 [ApiController]
 [Route("settings")]
-public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
+public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkService linkService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAppSettings(
-        [FromQuery] AppSettingsQueryParameter query,
+        [FromQuery] AppSettingsQueryParameters query,
         SortMappingProvider sortMappingProvider,
         DataShapingService dataShapingService)
     {
@@ -64,11 +66,19 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
 
         var paginationResult = new PaginationResult<ExpandoObject>
         {
-            Items = dataShapingService.ShapeCollectionData(appSettings, query.Fields),
+            Items = dataShapingService.ShapeCollectionData(
+                appSettings,
+                query.Fields,
+                s => CreateLinksForAppSettings(s.Id, query.Fields)),
             Page = query.Page,
             PageSize = query.PageSize,
-            TotalCount = totalCount
+            TotalCount = totalCount,
         };
+
+        paginationResult.Links = CreateLinksForAppSettings(
+                query,
+                paginationResult.HasNextPage,
+                paginationResult.HasPreviousPage);
 
         return Ok(paginationResult);
     }
@@ -96,9 +106,13 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
             return NotFound();
         }
 
-        ExpandoObject ShapedappSetting = dataShapingService.ShapeData(appSetting, fields);
+        ExpandoObject ShapedAppSetting = dataShapingService.ShapeData(appSetting, fields);
 
-        return Ok(ShapedappSetting);
+        List<LinkDto> links = CreateLinksForAppSettings(id, fields);
+
+        ShapedAppSetting.TryAdd("links", links);
+
+        return Ok(ShapedAppSetting);
     }
 
     [HttpPost]
@@ -120,9 +134,11 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
 
         await dbContext.SaveChangesAsync();
 
-        AppSettingsDto AppSettingsDto = appSetting.ToDto();
+        AppSettingsDto appSettingsDto = appSetting.ToDto();
 
-        return CreatedAtAction(nameof(GetAppSettings), new { id = AppSettingsDto.Id }, AppSettingsDto);
+        appSettingsDto.Links = CreateLinksForAppSettings(appSetting.Id, null);
+
+        return CreatedAtAction(nameof(GetAppSettings), new { id = appSettingsDto.Id }, appSettingsDto);
 
     }
 
@@ -184,6 +200,65 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
         await dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private List<LinkDto> CreateLinksForAppSettings(
+        AppSettingsQueryParameters parameters,
+        bool hasNextPage,
+        bool hasPreviousPage)
+    {
+        List<LinkDto> links =
+        [
+            linkService.Create(nameof(GetAppSettings), "self" , HttpMethods.Get , new
+            {
+                page     = parameters.Page,
+                pageSize = parameters.PageSize,
+                fields   = parameters.Fields,
+                q        = parameters.Search,
+                sort     = parameters.Sort,
+                type     = parameters.Type
+            }),
+            linkService.Create(nameof(CreateAppSettings), "create" , HttpMethods.Post)
+        ];
+
+        if (hasNextPage)
+        {
+            links.Add(linkService.Create(nameof(GetAppSettings), "next-page", HttpMethods.Get, new
+            {
+                page = parameters.Page + 1,
+                pageSize = parameters.PageSize,
+                fields = parameters.Fields,
+                q = parameters.Search,
+                sort = parameters.Sort,
+                type = parameters.Type
+            }));
+        }
+
+        if (hasPreviousPage)
+        {
+            links.Add(linkService.Create(nameof(GetAppSettings), "prev-page", HttpMethods.Get, new
+            {
+                page = parameters.Page - 1,
+                pageSize = parameters.PageSize,
+                fields = parameters.Fields,
+                q = parameters.Search,
+                sort = parameters.Sort,
+                type = parameters.Type
+            }));
+        }
+
+        return links;
+    }
+    private List<LinkDto> CreateLinksForAppSettings(string id, string? fields)
+    {
+        List<LinkDto> links =
+        [
+            linkService.Create(nameof(GetAppSettings), "self" , HttpMethods.Get , new {id , fields} ),
+            linkService.Create(nameof(UpdateAppSettings), "update" , HttpMethods.Put , new {id} ),
+            linkService.Create(nameof(PatchAppSettings), "partial-update" , HttpMethods.Patch , new {id} ),
+            linkService.Create(nameof(DeleteAppSettings), "delete" , HttpMethods.Delete , new {id} ),
+        ];
+        return links;
     }
 
 }

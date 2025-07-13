@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ESS.Api.DTOs.Settings;
 
-public sealed record AppSettingsQueryParameter : QueryParameter
+public sealed record AppSettingsQueryParameters : QueryParameter
 {
     public AppSettingsType? Type { get; init; }
 }
