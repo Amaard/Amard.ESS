@@ -64,22 +64,25 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
             .Take(query.PageSize)
             .ToListAsync();
 
+        bool includeLinks = query.Accept == CustomeMediaTypeNames.Application.HateoasJson;
+
         var paginationResult = new PaginationResult<ExpandoObject>
         {
             Items = dataShapingService.ShapeCollectionData(
                 appSettings,
                 query.Fields,
-                s => CreateLinksForAppSettings(s.Id, query.Fields)),
+                includeLinks ? s => CreateLinksForAppSettings(s.Id, query.Fields) : null),
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = totalCount,
         };
-
-        paginationResult.Links = CreateLinksForAppSettings(
-                query,
-                paginationResult.HasNextPage,
-                paginationResult.HasPreviousPage);
-
+        if (includeLinks)
+        {
+            paginationResult.Links = CreateLinksForAppSettings(
+                    query,
+                    paginationResult.HasNextPage,
+                    paginationResult.HasPreviousPage);
+        }
         return Ok(paginationResult);
     }
 
@@ -87,6 +90,8 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
     public async Task<IActionResult> GetAppSettings(
         string id,
         string? fields,
+        [FromHeader(Name="Accept")]
+        string? accept,
         DataShapingService dataShapingService)
     {
         if (!dataShapingService.Validate<AppSettingsDto>(fields))
@@ -108,9 +113,11 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
 
         ExpandoObject ShapedAppSetting = dataShapingService.ShapeData(appSetting, fields);
 
-        List<LinkDto> links = CreateLinksForAppSettings(id, fields);
-
-        ShapedAppSetting.TryAdd("links", links);
+        if (accept == CustomeMediaTypeNames.Application.HateoasJson)
+        {
+            List<LinkDto> links = CreateLinksForAppSettings(id, fields);
+            ShapedAppSetting.TryAdd("links", links);
+        }
 
         return Ok(ShapedAppSetting);
     }
