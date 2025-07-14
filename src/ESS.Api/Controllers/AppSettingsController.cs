@@ -1,7 +1,7 @@
 ﻿using System.Dynamic;
 using System.Net.Mime;
 using Asp.Versioning;
-using ESS.Api.Database;
+using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
