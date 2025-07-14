@@ -1,4 +1,5 @@
-﻿using ESS.Api.Database;
+﻿using Asp.Versioning;
+using ESS.Api.Database;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
@@ -20,7 +21,7 @@ namespace ESS.Api;
 
 public static class DependencyInjection
 {
-    public static WebApplicationBuilder AddControllers(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddApiServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddControllers(options =>
         {
@@ -37,7 +38,23 @@ public static class DependencyInjection
             .First();
 
             formatter.SupportedMediaTypes.Add(CustomeMediaTypeNames.Application.HateoasJson);
+            formatter.SupportedMediaTypes.Add(CustomeMediaTypeNames.Application.HateoasJsonV1);
+            formatter.SupportedMediaTypes.Add(CustomeMediaTypeNames.Application.JsonV1);
         });
+
+        builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1.0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionSelector = new DefaultApiVersionSelector(options);
+
+            options.ApiVersionReader = ApiVersionReader.Combine(
+                new MediaTypeApiVersionReader(),
+                new MediaTypeApiVersionReaderBuilder()
+                    .Template("application/vnd.amard-ecc.hateoas.{version}+json")
+                    .Build());
+        }).AddMvc();
 
         builder.Services.AddOpenApi();
 
