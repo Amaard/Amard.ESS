@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.Net.Http.Headers;
+using Microsoft.AspNetCore.Mvc;
+using ESS.Api.Services;
 
 namespace ESS.Api.DTOs.Common;
 
@@ -13,4 +15,9 @@ public record QueryParameter
 
     [FromHeader(Name ="Accept")]
     public string? Accept { get; init; }
+
+    public bool IncludesLinks => 
+        MediaTypeHeaderValue.TryParse(Accept, out MediaTypeHeaderValue? mediaType) &&
+        mediaType.SubTypeWithoutSuffix.HasValue &&
+        mediaType.SubTypeWithoutSuffix.Value.Contains(CustomeMediaTypeNames.Application.HateoasSubType);
 }

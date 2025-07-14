@@ -1,4 +1,6 @@
 ﻿using System.Dynamic;
+using System.Net.Mime;
+using Asp.Versioning;
 using ESS.Api.Database;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Common;
@@ -19,6 +21,12 @@ namespace ESS.Api.Controllers;
 
 [ApiController]
 [Route("settings")]
+[ApiVersion("1.0")]
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomeMediaTypeNames.Application.HateoasJson,
+    CustomeMediaTypeNames.Application.HateoasJsonV1,
+    CustomeMediaTypeNames.Application.JsonV1)]
 public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkService linkService) : ControllerBase
 {
     [HttpGet]
@@ -64,19 +72,17 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
             .Take(query.PageSize)
             .ToListAsync();
 
-        bool includeLinks = query.Accept == CustomeMediaTypeNames.Application.HateoasJson;
-
         var paginationResult = new PaginationResult<ExpandoObject>
         {
             Items = dataShapingService.ShapeCollectionData(
                 appSettings,
                 query.Fields,
-                includeLinks ? s => CreateLinksForAppSettings(s.Id, query.Fields) : null),
+                query.IncludesLinks ? s => CreateLinksForAppSettings(s.Id, query.Fields) : null),
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = totalCount,
         };
-        if (includeLinks)
+        if (query.IncludesLinks)
         {
             paginationResult.Links = CreateLinksForAppSettings(
                     query,
