@@ -1,17 +1,21 @@
-﻿using Asp.Versioning;
+﻿using System.Text;
+using Asp.Versioning;
 using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
-using ESS.Api.Services;
+using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
+using ESS.Api.Setup;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Serialization;
 using Npgsql;
 using OpenTelemetry;
@@ -19,7 +23,7 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace ESS.Api;
+namespace ESS.Api.Startup;
 
 public static class DependencyInjection
 {
@@ -128,6 +132,8 @@ public static class DependencyInjection
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddTransient<LinkService>();
 
+        builder.Services.AddTransient<TokenProvider>();
+
         return builder;
     }
 
@@ -136,6 +142,28 @@ public static class DependencyInjection
         builder.Services
             .AddIdentity<IdentityUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationIdentityDbContext>();
+
+        builder.Services.Configure<JwtAuthOptions>(builder.Configuration.GetSection("Jwt"));
+
+        JwtAuthOptions jwtAuthOptions = builder.Configuration.GetSection("Jwt").Get<JwtAuthOptions>()!;
+
+        builder.Services
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = jwtAuthOptions.Issuer,
+                    ValidAudience = jwtAuthOptions.Audiance,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtAuthOptions.Key))
+                };
+            });
+
+        builder.Services.AddAuthorization();
 
         return builder;
     }

@@ -1,7 +1,5 @@
-using ESS.Api;
 using ESS.Api.Database.Extentions;
-
-
+using ESS.Api.Startup;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +21,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

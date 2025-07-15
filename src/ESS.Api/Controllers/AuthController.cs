@@ -2,6 +2,7 @@
 using ESS.Api.Database.Entities.Users;
 using ESS.Api.DTOs.Auth;
 using ESS.Api.DTOs.Users;
+using ESS.Api.Services.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +17,17 @@ namespace ESS.Api.Controllers;
 public sealed class AuthController(
     UserManager<IdentityUser> userManager,
     ApplicationDbContext applicationDbContext,
-    ApplicationIdentityDbContext identityDbContext) : ControllerBase
+    ApplicationIdentityDbContext identityDbContext,
+    TokenProvider tokenProvider
+    ) : ControllerBase
 {
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterUserDto registerUserDto)
+    public async Task<ActionResult<AccessTokensDto>> Register(RegisterUserDto registerUserDto)
     {
-        //implement the Validation of user from AmardIaf here
-        #region AmardIaf Validation
 
+        #region AmardIaf Validation
+        //Implementation
         #endregion
 
         using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync();
@@ -62,6 +65,30 @@ public sealed class AuthController(
 
         await transaction.CommitAsync();
 
-        return Ok(user.Id);
+        var tokenRequest = new TokenRequest(identityUser.Id, identityUser.PhoneNumber);
+        AccessTokensDto accessTokens = tokenProvider.Create(tokenRequest);
+
+        return Ok(accessTokens);
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<AccessTokensDto>> Login(LoginUserDto loginUserDto)
+    {
+        #region 2FA Authentication
+        //Implementation
+        #endregion
+        IdentityUser? identityUser = await userManager.FindByNameAsync(loginUserDto.NationalCode);
+
+        if (identityUser is null)
+        {
+            return Unauthorized();
+        }
+
+        var tokenRequest = new TokenRequest(identityUser.Id, identityUser.PhoneNumber!);
+
+        AccessTokensDto accessTokens = tokenProvider.Create(tokenRequest);
+
+        return Ok(accessTokens);
+
     }
 }

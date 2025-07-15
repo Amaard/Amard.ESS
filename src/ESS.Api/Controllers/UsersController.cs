@@ -1,10 +1,12 @@
 ﻿using ESS.Api.Database.DatabaseContext;
 using ESS.Api.DTOs.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ESS.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("users")]
 public sealed class UsersController(ApplicationDbContext dbContext) : ControllerBase

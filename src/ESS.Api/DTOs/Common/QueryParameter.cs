@@ -1,6 +1,6 @@
 ﻿using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
-using ESS.Api.Services;
+using ESS.Api.Services.Common;
 
 namespace ESS.Api.DTOs.Common;
 

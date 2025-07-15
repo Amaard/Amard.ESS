@@ -3,7 +3,7 @@ using System.Dynamic;
 using System.Reflection;
 using ESS.Api.DTOs.Common;
 
-namespace ESS.Api.Services;
+namespace ESS.Api.Services.Common;
 
 public sealed class DataShapingService
 {

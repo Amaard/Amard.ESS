@@ -5,10 +5,11 @@ using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
-using ESS.Api.Services;
+using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -19,6 +20,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("settings")]
 [ApiVersion("1.0")]
