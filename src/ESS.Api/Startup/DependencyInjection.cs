@@ -4,6 +4,7 @@ using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
+using ESS.Api.Services;
 using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
 using ESS.Api.Setup;
@@ -133,6 +134,9 @@ public static class DependencyInjection
         builder.Services.AddTransient<LinkService>();
 
         builder.Services.AddTransient<TokenProvider>();
+
+        builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<UserContext>();
 
         return builder;
     }

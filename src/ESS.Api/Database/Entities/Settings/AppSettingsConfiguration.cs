@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ESS.Api.Database.Entities.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ESS.Api.Database.Entities.Settings;
@@ -12,6 +13,8 @@ public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettin
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).IsRequired();
         builder.Property(s => s.Id).HasMaxLength(500);
+
+        builder.Property(s => s.UserId).HasMaxLength(500);
 
         builder.Property(s => s.Key)
                .IsRequired()
@@ -33,5 +36,9 @@ public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettin
 
         builder.HasIndex(s => s.Key)
                .IsUnique();
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(s => s.UserId);
     }
 }

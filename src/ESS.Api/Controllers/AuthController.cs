@@ -26,6 +26,7 @@ public sealed class AuthController(
     ) : ControllerBase
 {
     private readonly JwtAuthOptions _jwtAuthOptions = options.Value;
+
     [HttpPost("register")]
     public async Task<ActionResult<AccessTokensDto>> Register(RegisterUserDto registerUserDto)
     {

@@ -5,6 +5,7 @@ using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
+using ESS.Api.Services;
 using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
 using FluentValidation;
@@ -29,7 +30,10 @@ namespace ESS.Api.Controllers;
     CustomeMediaTypeNames.Application.HateoasJson,
     CustomeMediaTypeNames.Application.HateoasJsonV1,
     CustomeMediaTypeNames.Application.JsonV1)]
-public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkService linkService) : ControllerBase
+public sealed class AppSettingsController(
+    ApplicationDbContext dbContext,
+    LinkService linkService,
+    UserContext userContext) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAppSettings(
@@ -37,6 +41,12 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
         SortMappingProvider sortMappingProvider,
         DataShapingService dataShapingService)
     {
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         if (!sortMappingProvider.ValidateMappings<AppSettingsDto, AppSettings>(query.Sort))
         {
             return Problem(
@@ -60,6 +70,7 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
 
         IQueryable<AppSettingsDto> appSettingsQuery = dbContext
             .AppSettings
+            .Where(s => s.UserId == userId)
             .Where(s => query.Search == null ||
                         s.Key.ToLower().Contains(query.Search) ||
                         s.Description != null && s.Description.ToLower().Contains(query.Search))
@@ -102,6 +113,13 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
         string? accept,
         DataShapingService dataShapingService)
     {
+
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         if (!dataShapingService.Validate<AppSettingsDto>(fields))
         {
             return Problem(
@@ -111,7 +129,7 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
 
         AppSettingsDto? appSetting = await dbContext
             .AppSettings
-            .Where(h => h.Id == id)
+            .Where(s => s.Id == id && s.UserId == userId)
             .Select(AppSettingsQueries.ProjectToDto()).FirstOrDefaultAsync();
 
         if (appSetting is null)
@@ -135,9 +153,15 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
         CreateAppSettingsDto createAppSettingsDto,
         IValidator<CreateAppSettingsDto> validator)
     {
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         await validator.ValidateAndThrowAsync(createAppSettingsDto);
 
-        AppSettings appSetting = createAppSettingsDto.ToEntity();
+        AppSettings appSetting = createAppSettingsDto.ToEntity(userId);
 
         if (await dbContext.AppSettings.AnyAsync(s => s.Key == appSetting.Key))
         {
@@ -154,13 +178,21 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
         appSettingsDto.Links = CreateLinksForAppSettings(appSetting.Id, null);
 
         return CreatedAtAction(nameof(GetAppSettings), new { id = appSettingsDto.Id }, appSettingsDto);
-
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateAppSettings(string id, UpdateAppSettingsDto updateAppSettingsDto)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(h => h.Id == id);
+
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings.
+            FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
 
         if (AppSettings is null)
         {
@@ -177,7 +209,15 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
     [HttpPatch("{id}")]
     public async Task<ActionResult> PatchAppSettings(string id, JsonPatchDocument<AppSettingsDto> patchDocument)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(h => h.Id == id);
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
 
         if (AppSettings is null)
         {
@@ -204,7 +244,15 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext, LinkSe
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteAppSettings(string id)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(g => g.Id == id);
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
 
         if (AppSettings is null)
         {

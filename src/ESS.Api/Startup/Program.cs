@@ -1,4 +1,4 @@
-using ESS.Api.Database.Extentions;
+using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Startup;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

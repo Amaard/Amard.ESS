@@ -11,10 +11,10 @@ public static class UserMappings
         return new User
         {
             Id = $"u_{Guid.CreateVersion7()}",
-            Name = "Amirreza Ghasemi", //Needs to change,
+            Name = "Reza Salemi", //Needs to change,
             NationalCode = dto.NationalCode,
             PhoneNumber = dto.PhoneNumber,
-            PersonalCode = "1000",
+            PersonalCode = "1001",
             CreatedAt = DateTime.UtcNow,
         };
     }

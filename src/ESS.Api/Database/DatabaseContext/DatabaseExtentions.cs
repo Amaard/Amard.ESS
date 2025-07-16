@@ -1,8 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
-using ESS.Api.Database.DatabaseContext;
 using Microsoft.EntityFrameworkCore;
 
-namespace ESS.Api.Database.Extentions;
+namespace ESS.Api.Database.DatabaseContext;
 
 public static class DatabaseExtentions
 {
