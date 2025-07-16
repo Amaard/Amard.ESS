@@ -4,12 +4,14 @@ using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
+using ESS.Api.Options;
 using ESS.Api.Services;
 using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
 using ESS.Api.Setup;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -23,6 +25,7 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using CorsOptions = ESS.Api.Options.CorsOptions;
 
 namespace ESS.Api.Startup;
 
@@ -170,6 +173,23 @@ public static class DependencyInjection
             });
 
         builder.Services.AddAuthorization();
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddCorsPolicy(this WebApplicationBuilder builder)
+    {
+        CorsOptions corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>()!;
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy(CorsOptions.PolicyName, policy =>
+            {
+                policy.WithOrigins(corsOptions.AllowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+            });
+        });
 
         return builder;
     }

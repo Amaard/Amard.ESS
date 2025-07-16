@@ -1,4 +1,5 @@
 using ESS.Api.Database.DatabaseContext;
+using ESS.Api.Options;
 using ESS.Api.Startup;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -8,7 +9,8 @@ builder.AddApiServices()
        .AddDatabase()
        .AddObservability()
        .AddApplicationServices()
-       .AddAuthenticationServices();
+       .AddAuthenticationServices()
+       .AddCorsPolicy();
 
 var app = builder.Build();
 
@@ -23,6 +25,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseExceptionHandler();
+
+app.UseCors(CorsOptions.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
