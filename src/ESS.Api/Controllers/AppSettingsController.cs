@@ -3,6 +3,7 @@ using System.Net.Mime;
 using Asp.Versioning;
 using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
+using ESS.Api.Database.Entities.Users;
 using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Services;
@@ -21,7 +22,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Admin)]
 [ApiController]
 [Route("settings")]
 [ApiVersion("1.0")]
@@ -314,6 +315,8 @@ public sealed class AppSettingsController(
     }
     private List<LinkDto> CreateLinksForAppSettings(string id, string? fields)
     {
+        User.IsInRole(Roles.Admin);
+
         List<LinkDto> links =
         [
             linkService.Create(nameof(GetAppSettings), "self" , HttpMethods.Get , new {id , fields} ),

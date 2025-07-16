@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using ESS.Api.Database.DatabaseContext;
+using ESS.Api.Database.Entities.Users;
 using ESS.Api.DTOs.Users;
 using ESS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ namespace ESS.Api.Controllers;
 public sealed class UsersController(ApplicationDbContext dbContext, UserContext userContext) : ControllerBase
 {
     [HttpGet("{id}")]
+    [Authorize(Roles =Roles.Admin)]
     public async Task<ActionResult<UserDto>> GetUsersById(string id)
     {
         string? userId = await userContext.GetUserIdAsync();

@@ -2,6 +2,6 @@
 
 public static class AppSettingsKey
 {
-    public const string PaymentReportImageFolderPath = "PaymentReportImageFolderPath";
-    public const string CheckWeakPassword = "CheckWeakPassword";
+    public const string PaymentReportImageFolderPath = nameof(PaymentReportImageFolderPath);
+    public const string CheckWeakPassword = nameof(CheckWeakPassword);
 }
