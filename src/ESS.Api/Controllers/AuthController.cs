@@ -1,7 +1,10 @@
 ﻿using ESS.Api.Database.DatabaseContext;
+using ESS.Api.Database.Entities.Employees;
+using ESS.Api.Database.Entities.Employees.Repositories;
 using ESS.Api.Database.Entities.Token;
 using ESS.Api.Database.Entities.Users;
 using ESS.Api.DTOs.Auth;
+using ESS.Api.DTOs.Employees;
 using ESS.Api.DTOs.Users;
 using ESS.Api.Services.Common;
 using ESS.Api.Setup;
@@ -28,11 +31,19 @@ public sealed class AuthController(
     private readonly JwtAuthOptions _jwtAuthOptions = options.Value;
 
     [HttpPost("register")]
-    public async Task<ActionResult<AccessTokensDto>> Register(RegisterUserDto registerUserDto)
+    public async Task<ActionResult<AccessTokensDto>> Register(IEmployeeRepository employeeRepository, RegisterUserDto registerUserDto)
     {
+        #region From_Iaf_Db
+        Employee employee = await employeeRepository.GetEmployeeByNationalCodeAndPhoneNumber(registerUserDto.NationalCode, registerUserDto.PhoneNumber);
 
-        #region AmardIaf Validation
-        //Implementation
+        if (employee is null)
+        {
+            return Problem(
+                detail: "Unable to register, User is not Valid!",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        EmployeeDto employeeDto = employee.ToDto();
         #endregion
 
         using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync();
@@ -45,7 +56,7 @@ public sealed class AuthController(
             PhoneNumber = registerUserDto.PhoneNumber,
         };
 
-        IdentityResult createUserResult = await userManager.CreateAsync(identityUser);
+        IdentityResult createUserResult = await userManager.CreateAsync(identityUser, registerUserDto.Password);
 
         if (!createUserResult.Succeeded)
         {
@@ -81,7 +92,7 @@ public sealed class AuthController(
                 extensions: extensions);
         }
 
-        User user = registerUserDto.ToEntity();
+        User user = registerUserDto.ToEntity(employeeDto);
         user.IdentityId = identityUser.Id;
 
         applicationDbContext.Users.Add(user);

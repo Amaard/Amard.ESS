@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Asp.Versioning;
 using ESS.Api.Database.DatabaseContext;
+using ESS.Api.Database.Entities.Employees.Repositories;
 using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
@@ -98,6 +99,16 @@ public static class DependencyInjection
                         .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Identity))
                 .UseSnakeCaseNamingConvention());
 
+        var IafConnectionString = builder.Configuration.GetConnectionString("IafDatabaseConnectionString");
+        if (!string.IsNullOrEmpty(IafConnectionString))
+        {
+            builder.Services.AddDbContext<IafDbContext>(options =>
+            {
+                options.UseSqlServer(IafConnectionString);
+                options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            });
+        }
+
         return builder;
     }
 
@@ -140,6 +151,8 @@ public static class DependencyInjection
 
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<UserContext>();
+
+        builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
         builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection("Encryption"));
         builder.Services.AddTransient<EncryptionService>();

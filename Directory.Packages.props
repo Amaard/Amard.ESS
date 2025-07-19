@@ -12,6 +12,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.JsonPatch" Version="9.0.7" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.7" />
     <PackageVersion Include="Microsoft.DependencyValidation.Analyzers" Version="0.11.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <!--Project Requirements-->
