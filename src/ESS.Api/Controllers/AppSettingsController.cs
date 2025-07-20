@@ -71,7 +71,6 @@ public sealed class AppSettingsController(
 
         IQueryable<AppSettingsDto> appSettingsQuery = dbContext
             .AppSettings
-            .Where(s => s.UserId == userId)
             .Where(s => query.Search == null ||
                         s.Key.ToLower().Contains(query.Search) ||
                         s.Description != null && s.Description.ToLower().Contains(query.Search))
@@ -130,7 +129,6 @@ public sealed class AppSettingsController(
 
         AppSettingsDto? appSetting = await dbContext
             .AppSettings
-            .Where(s => s.Id == id && s.UserId == userId)
             .Select(AppSettingsQueries.ProjectToDto()).FirstOrDefaultAsync();
 
         if (appSetting is null)
@@ -162,7 +160,7 @@ public sealed class AppSettingsController(
 
         await validator.ValidateAndThrowAsync(createAppSettingsDto);
 
-        AppSettings appSetting = createAppSettingsDto.ToEntity(userId);
+        AppSettings appSetting = createAppSettingsDto.ToEntity();
 
         if (await dbContext.AppSettings.AnyAsync(s => s.Key == appSetting.Key))
         {
@@ -185,15 +183,9 @@ public sealed class AppSettingsController(
     public async Task<ActionResult> UpdateAppSettings(string id, UpdateAppSettingsDto updateAppSettingsDto)
     {
 
-        string? userId = await userContext.GetUserIdAsync();
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
-
         AppSettings? AppSettings = await dbContext
-            .AppSettings.
-            FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {
@@ -210,15 +202,10 @@ public sealed class AppSettingsController(
     [HttpPatch("{id}")]
     public async Task<ActionResult> PatchAppSettings(string id, JsonPatchDocument<AppSettingsDto> patchDocument)
     {
-        string? userId = await userContext.GetUserIdAsync();
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
 
         AppSettings? AppSettings = await dbContext
             .AppSettings
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {
@@ -245,15 +232,10 @@ public sealed class AppSettingsController(
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteAppSettings(string id)
     {
-        string? userId = await userContext.GetUserIdAsync();
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            return Unauthorized();
-        }
 
         AppSettings? AppSettings = await dbContext
             .AppSettings
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {

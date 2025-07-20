@@ -14,8 +14,6 @@ public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettin
         builder.Property(s => s.Id).IsRequired();
         builder.Property(s => s.Id).HasMaxLength(500);
 
-        builder.Property(s => s.UserId).HasMaxLength(500);
-
         builder.Property(s => s.Key)
                .IsRequired()
                .HasMaxLength(100);
@@ -37,8 +35,5 @@ public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettin
         builder.HasIndex(s => s.Key)
                .IsUnique();
 
-        builder.HasOne<User>()
-            .WithMany()
-            .HasForeignKey(s => s.UserId);
     }
 }

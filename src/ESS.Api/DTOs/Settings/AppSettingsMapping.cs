@@ -18,12 +18,11 @@ internal static class AppSettingsMapping
             ModifiedAt = generalSettings.ModifiedAt
         };
     }
-    public static AppSettings ToEntity(this CreateAppSettingsDto dto , string userId)
+    public static AppSettings ToEntity(this CreateAppSettingsDto dto)
     {
         AppSettings generalSettings = new()
         {
             Id = $"s_{Guid.CreateVersion7()}",
-            UserId = userId ,
             Key = dto.Key,
             Type = dto.Type,
             Description = dto.Description,
