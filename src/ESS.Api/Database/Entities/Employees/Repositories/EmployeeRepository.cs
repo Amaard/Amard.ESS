@@ -5,22 +5,13 @@ namespace ESS.Api.Database.Entities.Employees.Repositories;
 
 public sealed class EmployeeRepository(IafDbContext dbContext) : IEmployeeRepository
 {
-    public async Task<List<Employee>> GetAllEmployeesAsync()
+    public async Task<Employee?> ValidateEmployeeByNationalCodeAndPhoneNumber(string nationalCode, string mobile)
     {
-        List<Employee> employeeList = await dbContext.EmployeeInfoView
-            .AsNoTracking()
-            .ToListAsync();
-
-        if (employeeList is null)
+        if (string.IsNullOrWhiteSpace(nationalCode) || string.IsNullOrWhiteSpace(mobile))
         {
-            return [];
+            return null;
         }
 
-        return employeeList;
-    }
-
-    public async Task<Employee?> GetEmployeeByNationalCodeAndPhoneNumber(string nationalCode , string mobile)
-    {
         return await dbContext.EmployeeInfoView
             .FirstOrDefaultAsync(e => e.MelliCode == nationalCode && e.Mobile == mobile);
     }

@@ -2,6 +2,5 @@
 
 public interface IEmployeeRepository
 {
-    Task<List<Employee>> GetAllEmployeesAsync();
-    Task<Employee?> GetEmployeeByNationalCodeAndPhoneNumber(string nationalCode, string mobile);
+    Task<Employee?> ValidateEmployeeByNationalCodeAndPhoneNumber(string nationalCode, string mobile);
 }

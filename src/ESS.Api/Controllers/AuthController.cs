@@ -33,8 +33,8 @@ public sealed class AuthController(
     [HttpPost("register")]
     public async Task<ActionResult<AccessTokensDto>> Register(IEmployeeRepository employeeRepository, RegisterUserDto registerUserDto)
     {
-        #region From_Iaf_Db
-        Employee employee = await employeeRepository.GetEmployeeByNationalCodeAndPhoneNumber(registerUserDto.NationalCode, registerUserDto.PhoneNumber);
+
+        Employee employee = await employeeRepository.ValidateEmployeeByNationalCodeAndPhoneNumber(registerUserDto.NationalCode, registerUserDto.PhoneNumber);
 
         if (employee is null)
         {
@@ -44,7 +44,6 @@ public sealed class AuthController(
         }
 
         EmployeeDto employeeDto = employee.ToDto();
-        #endregion
 
         using IDbContextTransaction transaction = await identityDbContext.Database.BeginTransactionAsync();
         applicationDbContext.Database.SetDbConnection(identityDbContext.Database.GetDbConnection());
@@ -125,7 +124,7 @@ public sealed class AuthController(
         #endregion
         IdentityUser? identityUser = await userManager.FindByNameAsync(loginUserDto.NationalCode);
 
-        if (identityUser is null)
+        if (identityUser is null || !await userManager.CheckPasswordAsync(identityUser , loginUserDto.Password))
         {
             return Unauthorized();
         }
