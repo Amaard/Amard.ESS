@@ -12,7 +12,7 @@ public sealed class CreateAppSettingsDtoValidator : AbstractValidator<CreateAppS
             .MinimumLength(3)
             .MaximumLength(100)
             .WithMessage("Key is required.")
-            .Must(AppSettingsKeyExtensions.IsValidKey)
+            .Must(AppSettingsKeyHelpers.IsValid)
             .WithMessage("Invalid key provided.");
 
         RuleFor(x => x.Value)
@@ -20,7 +20,7 @@ public sealed class CreateAppSettingsDtoValidator : AbstractValidator<CreateAppS
             .WithMessage("Value cannot exceed 2000 characters.");
 
         RuleFor(x => x.Type)
-            .Must(v => Enum.IsDefined(typeof(AppSettingsType), v))
+            .Must(v => Enum.IsDefined(v))
             .WithMessage("Invalid AppSettings type.");
 
         RuleFor(x => x.Description)

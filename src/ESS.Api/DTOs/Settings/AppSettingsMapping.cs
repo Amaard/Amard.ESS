@@ -1,4 +1,5 @@
 ﻿using ESS.Api.Database.Entities.Settings;
+using ESS.Api.Services.Sorting;
 
 namespace ESS.Api.DTOs.Settings;
 
@@ -39,4 +40,15 @@ internal static class AppSettingsMapping
         generalSettings.Description = dto.Description;
         generalSettings.ModifiedAt = DateTime.UtcNow;
     }
+
+    public static readonly SortMappingDefinition<AppSettingsDto, AppSettings> SortMapping = new()
+    {
+        Mappings =
+        [
+            new SortMapping(nameof(AppSettingsDto.Key), nameof(AppSettings.Key)),
+            new SortMapping(nameof(AppSettingsDto.Value), nameof(AppSettings.Value)),
+            new SortMapping(nameof(AppSettingsDto.ModifiedAt), nameof(AppSettings.ModifiedAt)),
+            new SortMapping(nameof(AppSettingsDto.Description), nameof(AppSettings.Description))
+        ]
+    };
 }

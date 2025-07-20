@@ -1,49 +1,150 @@
-﻿using ESS.Api.Database;
+﻿using System.Dynamic;
+using System.Net.Mime;
+using Asp.Versioning;
+using ESS.Api.Database.DatabaseContext;
 using ESS.Api.Database.Entities.Settings;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using ESS.Api.Database.Entities.Users;
+using ESS.Api.DTOs.Common;
 using ESS.Api.DTOs.Settings;
-using Microsoft.AspNetCore.JsonPatch;
+using ESS.Api.Services;
+using ESS.Api.Services.Common;
+using ESS.Api.Services.Sorting;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Trace;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
 
+[Authorize(Roles = Roles.Admin)]
 [ApiController]
 [Route("settings")]
-public sealed class AppSettingsController(ApplicationDbContext dbContext) : ControllerBase
+[ApiVersion("1.0")]
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomeMediaTypeNames.Application.HateoasJson,
+    CustomeMediaTypeNames.Application.HateoasJsonV1,
+    CustomeMediaTypeNames.Application.JsonV1)]
+public sealed class AppSettingsController(
+    ApplicationDbContext dbContext,
+    LinkService linkService,
+    UserContext userContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<AppSettingsCollectionDto>> GetAppSettings()
+    public async Task<IActionResult> GetAppSettings(
+        [FromQuery] AppSettingsQueryParameters query,
+        SortMappingProvider sortMappingProvider,
+        DataShapingService dataShapingService)
     {
-        List<AppSettingsDto> AppSettingsList = await dbContext
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        if (!sortMappingProvider.ValidateMappings<AppSettingsDto, AppSettings>(query.Sort))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided sort parameter isn't valid: '{query.Sort}'");
+        }
+
+        if (!dataShapingService.Validate<AppSettingsDto>(query.Fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided Fields aren't valid: '{query.Fields}'");
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            query.Search = query.Search.Trim().ToLower();
+        }
+
+        SortMapping[] sortMappings = sortMappingProvider.GetMappings<AppSettingsDto, AppSettings>();
+
+        IQueryable<AppSettingsDto> appSettingsQuery = dbContext
             .AppSettings
-            .Select(AppSettingsQueries.ProjectToDto()).ToListAsync();
+            .Where(s => query.Search == null ||
+                        s.Key.ToLower().Contains(query.Search) ||
+                        s.Description != null && s.Description.ToLower().Contains(query.Search))
+            .Where(s => query.Type == null || s.Type == query.Type)
+            .ApplySort(query.Sort, sortMappings)
+            .Select(AppSettingsQueries.ProjectToDto());
 
-        var AppSettingsCollectionDto =
-         new AppSettingsCollectionDto
-         {
-             Data = AppSettingsList
-         };
+        int totalCount = await appSettingsQuery.CountAsync();
 
-        return Ok(AppSettingsCollectionDto);
+        var appSettings = await appSettingsQuery
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        var paginationResult = new PaginationResult<ExpandoObject>
+        {
+            Items = dataShapingService.ShapeCollectionData(
+                appSettings,
+                query.Fields,
+                query.IncludesLinks ? s => CreateLinksForAppSettings(s.Id, query.Fields) : null),
+            Page = query.Page,
+            PageSize = query.PageSize,
+            TotalCount = totalCount,
+        };
+        if (query.IncludesLinks)
+        {
+            paginationResult.Links = CreateLinksForAppSettings(
+                    query,
+                    paginationResult.HasNextPage,
+                    paginationResult.HasPreviousPage);
+        }
+        return Ok(paginationResult);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<AppSettingsDto>> GetAppSettings(string id)
+    public async Task<IActionResult> GetAppSettings(
+        string id,
+        string? fields,
+        [FromHeader(Name="Accept")]
+        string? accept,
+        DataShapingService dataShapingService)
     {
-        AppSettingsDto? generalSetting = await dbContext
+
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        if (!dataShapingService.Validate<AppSettingsDto>(fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided Fields aren't valid: '{fields}'");
+        }
+
+        AppSettingsDto? appSetting = await dbContext
             .AppSettings
-            .Where(h => h.Id == id)
             .Select(AppSettingsQueries.ProjectToDto()).FirstOrDefaultAsync();
 
-        if (generalSetting is null)
+        if (appSetting is null)
         {
             return NotFound();
         }
 
-        return Ok(generalSetting);
+        ExpandoObject ShapedAppSetting = dataShapingService.ShapeData(appSetting, fields);
+
+        if (accept == CustomeMediaTypeNames.Application.HateoasJson)
+        {
+            List<LinkDto> links = CreateLinksForAppSettings(id, fields);
+            ShapedAppSetting.TryAdd("links", links);
+        }
+
+        return Ok(ShapedAppSetting);
     }
 
     [HttpPost]
@@ -51,30 +152,40 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
         CreateAppSettingsDto createAppSettingsDto,
         IValidator<CreateAppSettingsDto> validator)
     {
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         await validator.ValidateAndThrowAsync(createAppSettingsDto);
 
-        AppSettings generalSetting = createAppSettingsDto.ToEntity();
+        AppSettings appSetting = createAppSettingsDto.ToEntity();
 
-        if (await dbContext.AppSettings.AnyAsync(s => s.Key == generalSetting.Key))
+        if (await dbContext.AppSettings.AnyAsync(s => s.Key == appSetting.Key))
         {
-            return Problem(detail: $"The Setting '{generalSetting.Key}' already exists",
+            return Problem(detail: $"The Setting '{appSetting.Key}' already exists",
                            statusCode: StatusCodes.Status409Conflict);
         }
 
-        dbContext.AppSettings.Add(generalSetting);
+        dbContext.AppSettings.Add(appSetting);
 
         await dbContext.SaveChangesAsync();
 
-        AppSettingsDto AppSettingsDto = generalSetting.ToDto();
+        AppSettingsDto appSettingsDto = appSetting.ToDto();
 
-        return CreatedAtAction(nameof(GetAppSettings), new { id = AppSettingsDto.Id }, AppSettingsDto);
+        appSettingsDto.Links = CreateLinksForAppSettings(appSetting.Id, null);
 
+        return CreatedAtAction(nameof(GetAppSettings), new { id = appSettingsDto.Id }, appSettingsDto);
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateAppSettings(string id, UpdateAppSettingsDto updateAppSettingsDto)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(h => h.Id == id);
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {
@@ -91,7 +202,10 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
     [HttpPatch("{id}")]
     public async Task<ActionResult> PatchAppSettings(string id, JsonPatchDocument<AppSettingsDto> patchDocument)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(h => h.Id == id);
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {
@@ -118,7 +232,10 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteAppSettings(string id)
     {
-        AppSettings? AppSettings = await dbContext.AppSettings.FirstOrDefaultAsync(g => g.Id == id);
+
+        AppSettings? AppSettings = await dbContext
+            .AppSettings
+            .FirstOrDefaultAsync(s => s.Id == id);
 
         if (AppSettings is null)
         {
@@ -129,6 +246,67 @@ public sealed class AppSettingsController(ApplicationDbContext dbContext) : Cont
         await dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private List<LinkDto> CreateLinksForAppSettings(
+        AppSettingsQueryParameters parameters,
+        bool hasNextPage,
+        bool hasPreviousPage)
+    {
+        List<LinkDto> links =
+        [
+            linkService.Create(nameof(GetAppSettings), "self" , HttpMethods.Get , new
+            {
+                page     = parameters.Page,
+                pageSize = parameters.PageSize,
+                fields   = parameters.Fields,
+                q        = parameters.Search,
+                sort     = parameters.Sort,
+                type     = parameters.Type
+            }),
+            linkService.Create(nameof(CreateAppSettings), "create" , HttpMethods.Post)
+        ];
+
+        if (hasNextPage)
+        {
+            links.Add(linkService.Create(nameof(GetAppSettings), "next-page", HttpMethods.Get, new
+            {
+                page = parameters.Page + 1,
+                pageSize = parameters.PageSize,
+                fields = parameters.Fields,
+                q = parameters.Search,
+                sort = parameters.Sort,
+                type = parameters.Type
+            }));
+        }
+
+        if (hasPreviousPage)
+        {
+            links.Add(linkService.Create(nameof(GetAppSettings), "prev-page", HttpMethods.Get, new
+            {
+                page = parameters.Page - 1,
+                pageSize = parameters.PageSize,
+                fields = parameters.Fields,
+                q = parameters.Search,
+                sort = parameters.Sort,
+                type = parameters.Type
+            }));
+        }
+
+        return links;
+    }
+    private List<LinkDto> CreateLinksForAppSettings(string id, string? fields)
+    {
+        User.IsInRole(Roles.Admin);
+
+        List<LinkDto> links =
+        [
+            linkService.Create(nameof(GetAppSettings), "self" , HttpMethods.Get , new {id , fields} ),
+            linkService.Create(nameof(UpdateAppSettings), "update" , HttpMethods.Put , new {id} ),
+            linkService.Create(nameof(PatchAppSettings), "partial-update" , HttpMethods.Patch , new {id} ),
+            linkService.Create(nameof(DeleteAppSettings), "delete" , HttpMethods.Delete , new {id} ),
+        ];
+        return links;
     }
 
 }

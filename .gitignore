@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /.containers/postgres_data
 /.containers/pgadmin_data
 /src/ESS.Api/Database/Migrations/Application
+/src/ESS.Api/Database/Migrations/Identity

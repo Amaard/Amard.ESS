@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using ESS.Api.Database.Entities.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ESS.Api.Database.Entities.Settings;
@@ -33,5 +34,6 @@ public sealed class AppSettingsConfiguration: IEntityTypeConfiguration<AppSettin
 
         builder.HasIndex(s => s.Key)
                .IsUnique();
+
     }
 }

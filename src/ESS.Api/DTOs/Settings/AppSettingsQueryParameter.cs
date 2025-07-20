@@ -1,6 +1,10 @@
-﻿namespace ESS.Api.DTOs.Settings;
+﻿using ESS.Api.Database.Entities.Settings;
+using ESS.Api.DTOs.Common;
+using Microsoft.AspNetCore.Mvc;
 
-public sealed record AppSettingsQueryParameter
+namespace ESS.Api.DTOs.Settings;
+
+public sealed record AppSettingsQueryParameters : QueryParameter
 {
-    public string? Search {  get; set; }
+    public AppSettingsType? Type { get; init; }
 }
