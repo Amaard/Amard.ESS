@@ -17,7 +17,7 @@ public sealed class ReportController(ApplicationDbContext dbContext, UserContext
     private readonly string[] _allowedImageExtensions = { ".jpg", ".jpeg", ".png", ".pdf", ".tiff", ".bmp" };
 
     [HttpGet("payment")]
-    public async Task<IActionResult> GetPaymentReport(PaymentReportQuery reportQuery)
+    public async Task<IActionResult> GetPaymentReport([FromQuery] PaymentReportQuery reportQuery)
     {
 
         if (reportQuery.Year <= 0 || reportQuery.Month < 1 || reportQuery.Month > 12 || reportQuery.Level <= 0)
