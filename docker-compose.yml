@@ -1,10 +1,12 @@
-name: ess_stack
+name: amard_ess
 services:
 
   #API
   ess.api:
     container_name: API
     image: ${DOCKER_REGISTRY-}essapi
+    labels:
+      com.docker.compose.project: amard_ess
     build:
       context: .
       dockerfile: src/ESS.Api/Dockerfile
