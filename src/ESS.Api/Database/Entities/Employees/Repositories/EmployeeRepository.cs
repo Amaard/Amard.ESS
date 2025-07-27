@@ -5,7 +5,7 @@ namespace ESS.Api.Database.Entities.Employees.Repositories;
 
 public sealed class EmployeeRepository(IafDbContext dbContext) : IEmployeeRepository
 {
-    public async Task<Employee?> ValidateEmployeeByNationalCodeAndPhoneNumber(string nationalCode, string mobile)
+    public async Task<Employee?> ValidateEmployee(string nationalCode, string mobile)
     {
         if (string.IsNullOrWhiteSpace(nationalCode) || string.IsNullOrWhiteSpace(mobile))
         {

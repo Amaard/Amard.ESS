@@ -34,7 +34,7 @@ public sealed class AuthController(
     public async Task<ActionResult<AccessTokensDto>> Register(IEmployeeRepository employeeRepository, RegisterUserDto registerUserDto)
     {
 
-        Employee employee = await employeeRepository.ValidateEmployeeByNationalCodeAndPhoneNumber(registerUserDto.NationalCode, registerUserDto.PhoneNumber);
+        Employee employee = await employeeRepository.ValidateEmployee(registerUserDto.NationalCode, registerUserDto.PhoneNumber);
 
         if (employee is null)
         {

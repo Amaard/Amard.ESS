@@ -39,7 +39,7 @@ public static class DatabaseExtentions
 
         try
         {
-            // Seed Roles
+
             if (!await roleManager.RoleExistsAsync(Roles.Employee))
             {
                 await roleManager.CreateAsync(new IdentityRole(Roles.Employee));
@@ -77,7 +77,6 @@ public static class DatabaseExtentions
                         string.Join(";", roleResult.Errors.Select(e => e.Description)));
                 }
 
-                // Add to ApplicationDbContext
                 var adminUser = new User
                 {
                     Id = $"u_{Guid.CreateVersion7()}",

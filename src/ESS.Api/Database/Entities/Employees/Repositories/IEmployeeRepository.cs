@@ -2,5 +2,5 @@
 
 public interface IEmployeeRepository
 {
-    Task<Employee?> ValidateEmployeeByNationalCodeAndPhoneNumber(string nationalCode, string mobile);
+    Task<Employee?> ValidateEmployee(string nationalCode, string mobile);
 }
