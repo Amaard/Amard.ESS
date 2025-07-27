@@ -50,11 +50,15 @@ public static class DatabaseExtentions
                 await roleManager.CreateAsync(new IdentityRole(Roles.Admin));
             }
 
-            const string adminNationalCode = "4444444444";
-            const string adminPhone = "09351900775";
-            const string adminPassword = "9110!Reza";
+            var config = app.Configuration.GetSection("SeedAdmin");
+            string adminNationalCode = config["NationalCode"];
+            string adminPhone = config["PhoneNumber"];
+            string adminPassword = config["Password"];
+            string adminName = config["Name"];
+            string personalCode = config["PersonalCode"];
 
-            var existingUser = await userManager.FindByNameAsync(adminNationalCode);
+
+            var existingUser = await userManager.FindByNameAsync(adminNationalCode!);
             if (existingUser == null)
             {
                 var identityUser = new IdentityUser
@@ -63,7 +67,7 @@ public static class DatabaseExtentions
                     PhoneNumber = adminPhone
                 };
 
-                var createResult = await userManager.CreateAsync(identityUser, adminPassword);
+                var createResult = await userManager.CreateAsync(identityUser, adminPassword!);
                 if (!createResult.Succeeded)
                 {
                     throw new Exception("Failed to create admin IdentityUser: " +
@@ -80,10 +84,10 @@ public static class DatabaseExtentions
                 var adminUser = new User
                 {
                     Id = $"u_{Guid.CreateVersion7()}",
-                    Name = "امیررضا قاسمی",
-                    NationalCode = adminNationalCode,
-                    PhoneNumber = adminPhone,
-                    PersonalCode = "0",
+                    Name = adminName!,
+                    NationalCode = adminNationalCode!,
+                    PhoneNumber = adminPhone!,
+                    PersonalCode = personalCode!,
                     CreatedAt = DateTime.UtcNow,
                     IdentityId = identityUser.Id
                 };
