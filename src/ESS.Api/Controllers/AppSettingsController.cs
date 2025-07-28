@@ -37,6 +37,7 @@ public sealed class AppSettingsController(
     UserContext userContext) : ControllerBase
 {
     [HttpGet]
+    [ResponseCache(Duration = 120)]
     public async Task<IActionResult> GetAppSettings(
         [FromQuery] AppSettingsQueryParameters query,
         SortMappingProvider sortMappingProvider,
@@ -105,6 +106,7 @@ public sealed class AppSettingsController(
         return Ok(paginationResult);
     }
 
+    [ResponseCache(Duration = 120)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetAppSettings(
         string id,

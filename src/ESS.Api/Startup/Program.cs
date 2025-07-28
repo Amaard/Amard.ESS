@@ -1,4 +1,5 @@
 using ESS.Api.Database.DatabaseContext;
+using ESS.Api.Middleware.Caching;
 using ESS.Api.Options;
 using ESS.Api.Startup;
 
@@ -30,6 +31,8 @@ app.UseCors(CorsOptions.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<ETagMiddleware>();
 
 app.MapControllers();
 

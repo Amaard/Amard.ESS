@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ESS.Api.Controllers;
-
+[ResponseCache(Duration = 120)]
 [Authorize]
 [ApiController]
 [Route("users")]

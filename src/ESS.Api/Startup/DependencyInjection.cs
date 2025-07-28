@@ -7,6 +7,7 @@ using ESS.Api.DTOs.Settings;
 using ESS.Api.Middleware.Exceptions;
 using ESS.Api.Options;
 using ESS.Api.Services;
+using ESS.Api.Services.Caching;
 using ESS.Api.Services.Common;
 using ESS.Api.Services.Sorting;
 using ESS.Api.Setup;
@@ -68,6 +69,10 @@ public static class DependencyInjection
         }).AddMvc();
 
         builder.Services.AddOpenApi();
+
+        builder.Services.AddResponseCaching();
+
+        builder.Services.AddOutputCache();
 
         return builder;
     }
@@ -156,6 +161,9 @@ public static class DependencyInjection
 
         builder.Services.Configure<EncryptionOptions>(builder.Configuration.GetSection("Encryption"));
         builder.Services.AddTransient<EncryptionService>();
+
+        builder.Services.AddSingleton<InMemoryETagStore>();
+
         return builder;
     }
 
