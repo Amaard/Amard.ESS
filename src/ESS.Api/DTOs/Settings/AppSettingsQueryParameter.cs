@@ -1,6 +1,6 @@
 ﻿using ESS.Api.Database.Entities.Settings;
 using ESS.Api.DTOs.Common;
-using Microsoft.AspNetCore.Mvc;
+using ESS.Api.Services.Common;
 
 namespace ESS.Api.DTOs.Settings;
 

@@ -106,9 +106,78 @@ public sealed class AppSettingsController(
         return Ok(paginationResult);
     }
 
+    [HttpGet("cursor")]
+    [ResponseCache(Duration = 120)]
+    public async Task<IActionResult> GetAppSettingsCursor(
+        [FromQuery] AppSettingsCursorQueryParameters query,
+        DataShapingService dataShapingService)
+    {
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        if (!dataShapingService.Validate<AppSettingsDto>(query.Fields))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided Fields aren't valid: '{query.Fields}'");
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            query.Search = query.Search.Trim().ToLower();
+        }
+
+        IQueryable<AppSettings> appSettingsQuery = dbContext.AppSettings
+            .Where(s => query.Search == null ||
+                        s.Key.ToLower().Contains(query.Search) ||
+                        s.Description != null && s.Description.ToLower().Contains(query.Search))
+            .Where(s => query.Type == null || s.Type == query.Type);
+
+        if (!string.IsNullOrWhiteSpace(query.Cursor))
+        {
+            var cursor = AppSettingsCursorDto.Decode(query.Cursor);
+            if (cursor is not null)
+            {
+                appSettingsQuery = appSettingsQuery.Where(s => string.Compare(s.Id, cursor.Id) <= 0);
+            }
+        }
+
+        List<AppSettingsDto> appSettings = await appSettingsQuery
+            .OrderByDescending(s => s.Id)
+            .Take(query.Limit + 1)
+            .Select(AppSettingsQueries.ProjectToDto())
+            .ToListAsync();
+
+        bool hasNextPage = appSettings.Count > query.Limit;
+        string? nextCursor = null;
+
+        if (hasNextPage)
+        {
+            AppSettingsDto lastAppSettings = appSettings[^1];
+            nextCursor = AppSettingsCursorDto.Encode(lastAppSettings.Id);
+            appSettings.RemoveAt(appSettings.Count - 1);
+        }
+
+        var paginationResult = new CollectionResponse<ExpandoObject>
+        {
+            Items = dataShapingService.ShapeCollectionData(
+                appSettings,
+                query.Fields,
+                query.IncludesLinks ? s => CreateLinksForAppSettings(s.Id, query.Fields) : null),
+        };
+        if (query.IncludesLinks)
+        {
+            paginationResult.Links = CreateLinksForAppSettingsCursor(query,nextCursor);
+        }
+        return Ok(paginationResult);
+    }
+
     [ResponseCache(Duration = 120)]
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetAppSettings(
+    public async Task<IActionResult> GetAppSetting(
         string id,
         string? fields,
         [FromHeader(Name="Accept")]
@@ -297,6 +366,39 @@ public sealed class AppSettingsController(
 
         return links;
     }
+
+    private List<LinkDto> CreateLinksForAppSettingsCursor(
+        AppSettingsCursorQueryParameters parameters,
+        string? nextCursor)
+    {
+        List<LinkDto> links =
+        [
+            linkService.Create(nameof(GetAppSettingsCursor), "self" , HttpMethods.Get , new
+            {
+                cursor = parameters.Cursor,
+                limit = parameters.Limit,
+                fields   = parameters.Fields,
+                q        = parameters.Search,
+                type     = parameters.Type
+            }),
+            linkService.Create(nameof(CreateAppSettings), "create" , HttpMethods.Post)
+        ];
+
+        if (!string.IsNullOrWhiteSpace(nextCursor))
+        {
+            links.Add(linkService.Create(nameof(GetAppSettingsCursor), "next-page", HttpMethods.Get, new
+            {
+                cursor = nextCursor,
+                limit = parameters.Limit,
+                fields = parameters.Fields,
+                q = parameters.Search,
+                type = parameters.Type
+            }));
+        }
+
+        return links;
+    }
+
     private List<LinkDto> CreateLinksForAppSettings(string id, string? fields)
     {
         User.IsInRole(Roles.Admin);

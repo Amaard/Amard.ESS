@@ -22,7 +22,7 @@ services:
       - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
       - DOTNET_RUNNING_IN_CONTAINER=true
     volumes:
-      - D:\Report:/app/reports
+      - D:\Zinfo\AmirZag\PaymentReport:/app/reports
     depends_on:
       - ess.postgres
 
