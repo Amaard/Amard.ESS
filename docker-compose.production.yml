@@ -1,0 +1,124 @@
+name: amard_ess_production
+services:
+  # API Service
+  ess.api:
+    container_name: ESS_API_Production
+    image: essapi:production
+    restart: unless-stopped
+    ports:
+      - "5000:8080"   # HTTP
+      - "5001:8081"   # HTTPS (if needed)
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      # OpenTelemetry Configuration
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://ess.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    volumes:
+      - ./reports:/app/reports
+      - ./config/appsettings.Production.json:/app/appsettings.Production.json:ro
+      - ./logs:/app/logs
+    depends_on:
+      ess.postgres:
+        condition: service_healthy
+    networks:
+      - ess_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # PostgreSQL Database
+  ess.postgres:
+    container_name: ESS_PostgreSQL_Production
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: amard_ess
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./config/postgres.conf:/etc/postgresql/postgresql.conf:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - ess_network
+    secrets:
+      - postgres_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d amard_ess"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PGAdmin (Optional - can be removed in production)
+  ess.pgadmin:
+    container_name: ESS_PgAdmin_Production
+    image: dpage/pgadmin4:8
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@company.com
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin_password
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./config/servers.json:/pgadmin4/servers.json:ro
+    ports:
+      - "5050:80"
+    depends_on:
+      ess.postgres:
+        condition: service_healthy
+    networks:
+      - ess_network
+    secrets:
+      - pgadmin_password
+
+  # Aspire Dashboard for Monitoring
+  ess.aspire-dashboard:
+    container_name: ESS_Monitoring_Production
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.3
+    restart: unless-stopped
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "false"
+      DOTNET_DASHBOARD_FRONTEND_AUTHMODE: "ApiKey"
+      DOTNET_DASHBOARD_FRONTEND_APIKEY_FILE: /run/secrets/aspire_api_key
+    ports:
+      - "18888:18888"
+    networks:
+      - ess_network
+    secrets:
+      - aspire_api_key
+    volumes:
+      - aspire_data:/app/data
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  aspire_data:
+    driver: local
+
+# Secrets for secure password management
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  pgadmin_password:
+    file: ./secrets/pgadmin_password.txt
+  aspire_api_key:
+    file: ./secrets/aspire_api_key.txt
+
+# Custom network for service communication
+networks:
+  ess_network:
+    driver: bridge
+    name: ess_production_network

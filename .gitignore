@@ -367,3 +367,5 @@ FodyWeavers.xsd
 /.containers/pgadmin_data
 /src/ESS.Api/Database/Migrations/Application
 /src/ESS.Api/Database/Migrations/Identity
+/deployment-package
+.github/
