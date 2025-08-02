@@ -370,3 +370,4 @@ FodyWeavers.xsd
 /deployment-package
 .github/
 /config/SqlScripts/ApplicationDbContext_Migration.sql
+/config/SqlScripts/ApplicationDbContext_Migration.sql
