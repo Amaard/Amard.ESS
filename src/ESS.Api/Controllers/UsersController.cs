@@ -15,7 +15,7 @@ namespace ESS.Api.Controllers;
 public sealed class UsersController(ApplicationDbContext dbContext, UserContext userContext) : ControllerBase
 {
     [HttpGet("{id}")]
-    [Authorize(Roles =Roles.Admin)]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<UserDto>> GetUsersById(string id)
     {
         string? userId = await userContext.GetUserIdAsync();

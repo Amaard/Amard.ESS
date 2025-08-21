@@ -371,3 +371,10 @@ FodyWeavers.xsd
 .github/
 /config/SqlScripts/ApplicationDbContext_Migration.sql
 /config/SqlScripts/ApplicationDbContext_Migration.sql
+/esscert.pem
+/esskey.pem
+/esscert.pem
+/esscert.pfx
+/esskey.pem
+/certs
+/config/appsettings.Production.json
