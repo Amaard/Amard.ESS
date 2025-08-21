@@ -378,3 +378,4 @@ FodyWeavers.xsd
 /esskey.pem
 /certs
 /config/appsettings.Production.json
+/config/appsettings.Production.json
