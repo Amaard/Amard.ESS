@@ -16,12 +16,13 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Trace;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ESS.Api.Controllers;
-
+[EnableRateLimiting("default")]
 [Authorize(Roles = Roles.Admin)]
 [ApiController]
 [Route("settings")]

@@ -5,10 +5,11 @@ using ESS.Api.DTOs.Reports;
 using ESS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace ESS.Api.Controllers;
-
+[EnableRateLimiting("default")]
 [Authorize(Roles = Roles.Employee)]
 [ApiController]
 [Route("reports")]

@@ -5,10 +5,12 @@ using ESS.Api.DTOs.Users;
 using ESS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace ESS.Api.Controllers;
 [ResponseCache(Duration = 120)]
+[EnableRateLimiting("default")]
 [Authorize]
 [ApiController]
 [Route("users")]
