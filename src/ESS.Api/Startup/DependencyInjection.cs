@@ -257,14 +257,14 @@ public static class DependencyInjection
                             TokensPerPeriod = 25
                         });
                 }
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    "anonymous",
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 5,
-                        Window = TimeSpan.FromMinutes(1)
-                    }
-                );
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        "anonymous",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1)
+                        }
+                    );
             });
         });
         return builder;
