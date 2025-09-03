@@ -26,7 +26,8 @@ services:
       - ASPNETCORE_Kestrel__Endpoints__Https__Certificate__Path=/certs/esscert.pfx
       - ASPNETCORE_Kestrel__Endpoints__Https__Certificate__Password=Rez@0911
     volumes:
-      - D:\Zinfo\AmirZag\PaymentReport:/app/reports
+      - D:\Zinfo\AmirZag\PaymentReport:/app/reports/payment
+      - D:\Hokm:/app/reports/personnel-file
       - ./certs/esscert.pfx:/certs/esscert.pfx:ro
     depends_on:
       - ess.postgres

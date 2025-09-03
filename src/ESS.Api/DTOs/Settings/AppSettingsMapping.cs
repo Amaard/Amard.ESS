@@ -15,7 +15,8 @@ internal static class AppSettingsMapping
             Type = generalSettings.Type,
             Description = generalSettings.Description,
             CreatedAt = generalSettings.CreatedAt,
-            ModifiedAt = generalSettings.ModifiedAt
+            ModifiedAt = generalSettings.ModifiedAt,
+            Links = []
         };
     }
     public static AppSettings ToEntity(this CreateAppSettingsDto dto)
